@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello, World!</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+      <h1 class="title">Hello World!</h1>
+      <p id="currentTime"></p>
+      <script src="script.js"></script>
+  </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StyleCast — AI Outfit Suggester | Weather + Calendar Based</title>
+    <meta name="description" content="Get AI-powered outfit suggestions based on your local weather, daily schedule, and personal style. Never wonder what to wear again!">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f14;
+            --bg-secondary: #16161d;
+            --bg-card: #1c1c26;
+            --bg-card-hover: #222230;
+            --bg-elevated: #252533;
+            --accent-1: #e8a0ff;
+            --accent-2: #7eb8ff;
+            --accent-3: #ffb86c;
+            --accent-4: #ff7eb3;
+            --accent-5: #7dffb3;
+            --gradient-main: linear-gradient(135deg, #e8a0ff, #7eb8ff);
+            --gradient-warm: linear-gradient(135deg, #ffb86c, #ff7eb3);
+            --gradient-cool: linear-gradient(135deg, #7eb8ff, #7dffb3);
+            --gradient-card: linear-gradient(145deg, #1c1c26, #222230);
+            --text-primary: #f0eef5;
+            --text-secondary: #a09cb5;
+            --text-muted: #6b6880;
+            --border: rgba(255,255,255,0.06);
+            --border-light: rgba(255,255,255,0.1);
+            --shadow: 0 20px 60px rgba(0,0,0,0.3);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-xs: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-1); border-radius: 3px; }
+
+        /* ===== BG EFFECTS ===== */
+        .bg-effects {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.08;
+            animation: blobFloat 25s infinite ease-in-out;
+        }
+
+        .bg-blob:nth-child(1) { width: 500px; height: 500px; background: var(--accent-1); top: -150px; left: -100px; }
+        .bg-blob:nth-child(2) { width: 400px; height: 400px; background: var(--accent-2); top: 40%; right: -100px; animation-delay: -8s; }
+        .bg-blob:nth-child(3) { width: 450px; height: 450px; background: var(--accent-3); bottom: -100px; left: 25%; animation-delay: -16s; }
+        .bg-blob:nth-child(4) { width: 300px; height: 300px; background: var(--accent-4); top: 20%; left: 50%; animation-delay: -12s; }
+
+        @keyframes blobFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(60px, -40px) scale(1.1); }
+            66% { transform: translate(-40px, 60px) scale(0.95); }
+        }
+
+        /* ===== GRID OVERLAY ===== */
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(24px) saturate(180%);
+            background: rgba(15, 15, 20, 0.75);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--gradient-main);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 800;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover { color: var(--accent-1); }
+
+        .nav-cta {
+            background: var(--gradient-main) !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: unset !important;
+            color: #000 !important;
+            padding: 8px 20px;
+            border-radius: var(--radius-xs);
+            font-weight: 600 !important;
+        }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .container-wide { max-width: 1200px; }
+
+        /* ===== AD BANNER ===== */
+        .ad-banner {
+            background: var(--bg-card);
+            border: 1px dashed var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 18px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin: 24px auto;
+            max-width: 728px;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            padding: 130px 0 50px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(232, 160, 255, 0.1);
+            border: 1px solid rgba(232, 160, 255, 0.2);
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--accent-1);
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .hero-badge .dot {
+            width: 6px; height: 6px;
+            background: var(--accent-1);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.8); }
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(34px, 6vw, 62px);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 18px;
+            letter-spacing: -1px;
+        }
+
+        .hero h1 .grad-1 {
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero h1 .grad-2 {
+            background: var(--gradient-warm);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 17px;
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin: 0 auto 36px;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+
+        .hero-features {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+
+        .hero-feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .hero-feature .icon {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* ===== MAIN APP SECTION ===== */
+        .app-section {
+            margin-bottom: 40px;
+        }
+
+        .app-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .app-card-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-card-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-badge {
+            width: 28px;
+            height: 28px;
+            background: var(--gradient-main);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            color: #000;
+        }
+
+        .app-card-body {
+            padding: 28px;
+        }
+
+        /* ===== LOCATION INPUT ===== */
+        .location-input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-wrapper .icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            z-index: 2;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 14px 14px 14px 46px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .text-input:focus {
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 4px rgba(232,160,255,0.15);
+        }
+
+        .text-input::placeholder { color: var(--text-muted); }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--gradient-main);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(232,160,255,0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-light);
+        }
+
+        .btn-gps {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 14px 18px;
+        }
+
+        .btn-gps:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .popular-cities {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .city-chip {
+            padding: 6px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .city-chip:hover {
+            background: rgba(232,160,255,0.1);
+            border-color: rgba(232,160,255,0.3);
+            color: var(--accent-1);
+        }
+
+        /* ===== WEATHER DISPLAY ===== */
+        .weather-display {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .weather-display.active { display: block; }
+
+        .weather-card {
+            background: var(--gradient-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            padding: 24px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .weather-icon-large {
+            font-size: 64px;
+            line-height: 1;
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+        }
+
+        .weather-info h3 {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .weather-temp {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .weather-desc {
+            font-size: 16px;
+            color: var(--text-secondary);
+            text-transform: capitalize;
+            font-weight: 500;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .weather-detail-item {
+            background: rgba(255,255,255,0.04);
+            border-radius: var(--radius-xs);
+            padding: 10px 14px;
+            text-align: center;
+        }
+
+        .weather-detail-item .label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .weather-detail-item .value {
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* ===== SCHEDULE INPUT ===== */
+        .schedule-section {
+            margin-top: 20px;
+        }
+
+        .event-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .event-slot {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .time-select, .event-select {
+            padding: 12px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .time-select:focus, .event-select:focus {
+            border-color: var(--accent-1);
+        }
+
+        .time-select { width: 140px; }
+        .event-select { flex: 1; }
+
+        .event-note {
+            flex: 1;
+            padding: 12px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xs);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .btn-remove-event {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,71,87,0.1);
+            border: 1px solid rgba(255,71,87,0.2);
+            border-radius: 8px;
+            color: #ff4757;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+        .btn-remove-event:hover {
+            background: rgba(255,71,87,0.2);
+        }
+
+        .btn-add-event {
+            padding: 10px 18px;
+            background: rgba(232,160,255,0.08);
+            border: 1px dashed rgba(232,160,255,0.3);
+            border-radius: var(--radius-xs);
+            color: var(--accent-1);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-add-event:hover {
+            background: rgba(232,160,255,0.15);
+        }
+
+        /* ===== STYLE PREFERENCES ===== */
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .style-option {
+            padding: 14px 10px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .style-option:hover {
+            border-color: var(--border-light);
+            background: var(--bg-card-hover);
+        }
+
+        .style-option.selected {
+            border-color: var(--accent-1);
+            background: rgba(232,160,255,0.08);
+        }
+
+        .style-option .style-emoji {
+            font-size: 28px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .style-option .style-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .style-option.selected .style-name {
+            color: var(--accent-1);
+        }
+
+        /* ===== GENDER SELECT ===== */
+        .gender-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .gender-option {
+            flex: 1;
+            padding: 12px;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .gender-option:hover {
+            border-color: var(--border-light);
+        }
+
+        .gender-option.selected {
+            border-color: var(--accent-1);
+            background: rgba(232,160,255,0.08);
+            color: var(--accent-1);
+        }
+
+        /* ===== GENERATE BUTTON ===== */
+        .generate-section {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .btn-generate {
+            padding: 18px 48px;
+            background: var(--gradient-main);
+            border: none;
+            border-radius: 14px;
+            color: #000;
+            font-family: 'Outfit', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(232,160,255,0.35);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== LOADING ANIMATION ===== */
+        .loading-overlay {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading-overlay.active { display: block; }
+
+        .outfit-loader {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 24px;
+            position: relative;
+        }
+
+        .loader-hanger {
+            font-size: 50px;
+            animation: swing 1.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes swing {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .loading-sub {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .loading-steps {
+            list-style: none;
+            max-width: 280px;
+            margin: 20px auto 0;
+        }
+
+        .loading-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+            font-size: 13px;
+            color: var(--text-muted);
+            transition: 0.3s;
+        }
+
+        .loading-step.done { color: var(--accent-5); }
+        .loading-step.active { color: var(--text-primary); }
+
+        .loading-step .check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .loading-step.done .check {
+            background: var(--accent-5);
+            border-color: var(--accent-5);
+            color: #000;
+        }
+
+        .loading-step.active .check {
+            border-color: var(--accent-1);
+            animation: pulse 1s infinite;
+        }
+
+        /* ===== RESULTS / OUTFIT SUGGESTIONS ===== */
+        .results-container {
+            display: none;
+        }
+
+        .results-container.active { display: block; }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .results-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .results-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .weather-summary-bar {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            padding: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 28px;
+        }
+
+        .ws-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .ws-item .ws-icon { font-size: 20px; }
+        .ws-item .ws-label { color: var(--text-muted); font-size: 12px; }
+        .ws-item .ws-value { font-weight: 600; }
+
+        /* ===== OUTFIT CARDS ===== */
+        .outfit-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .outfit-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        .outfit-block:hover {
+            border-color: var(--border-light);
+            transform: translateY(-2px);
+        }
+
+        .outfit-block-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .outfit-time-event {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .outfit-time {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: var(--bg-card);
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
+
+        .outfit-event-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .outfit-event-emoji {
+            font-size: 20px;
+        }
+
+        .outfit-body {
+            padding: 24px;
+        }
+
+        .outfit-items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .outfit-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .outfit-item:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .outfit-item-emoji {
+            font-size: 36px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .outfit-item-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .outfit-item-detail {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* ===== COLOR PALETTE ===== */
+        .color-palette-section {
+            margin-bottom: 16px;
+        }
+
+        .color-palette-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .color-swatches {
+            display: flex;
+            gap: 6px;
+        }
+
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.2);
+            border-color: #fff;
+        }
+
+        .color-swatch .tooltip {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-elevated);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: 0.2s;
+            pointer-events: none;
+        }
+
+        .color-swatch:hover .tooltip { opacity: 1; }
+
+        /* ===== TIPS ===== */
+        .outfit-tips {
+            background: rgba(232,160,255,0.05);
+            border: 1px solid rgba(232,160,255,0.15);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+
+        .outfit-tips h4 {
+            font-size: 13px;
+            color: var(--accent-1);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .outfit-tips p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== OUTFIT ACTIONS ===== */
+        .outfit-block-footer {
+            padding: 14px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.3s;
+        }
+
+        .btn-sm:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        /* ===== EXTRA ADVICE ===== */
+        .advice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 14px;
+            margin-top: 28px;
+        }
+
+        .advice-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: 0.3s;
+        }
+
+        .advice-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border-light);
+        }
+
+        .advice-card .advice-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .advice-card h4 {
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+
+        .advice-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ===== NEW SUGGESTION BTN ===== */
+        .center-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== HOW IT WORKS ===== */
+        .how-section {
+            padding: 60px 0;
+        }
+
+        .section-heading {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section-heading h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .section-heading p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .steps-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .step-box {
+            text-align: center;
+            padding: 28px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: 0.3s;
+        }
+
+        .step-box:hover {
+            transform: translateY(-4px);
+            border-color: rgba(232,160,255,0.3);
+        }
+
+        .step-num {
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-main);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: #000;
+            margin: 0 auto 14px;
+        }
+
+        .step-box h3 { font-size: 15px; margin-bottom: 6px; }
+        .step-box p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+        /* ===== TESTIMONIALS ===== */
+        .testimonials {
+            padding: 40px 0;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .testimonial-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+        }
+
+        .testimonial-stars {
+            color: var(--accent-3);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .testimonial-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 14px;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .testimonial-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--gradient-main);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .testimonial-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .testimonial-role {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 40px 20px 20px;
+            margin-top: 60px;
+        }
+
+        .footer-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-brand p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-top: 12px;
+        }
+
+        .footer-col h4 {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+        }
+
+        .footer-col a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 3px 0;
+            transition: 0.3s;
+        }
+
+        .footer-col a:hover { color: var(--accent-1); }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 28px auto 0;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 14px 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 2000;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: var(--shadow);
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-icon { font-size: 18px; }
+        .toast-msg { font-size: 14px; font-weight: 500; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .navbar { padding: 12px 16px; }
+            .nav-links { display: none; }
+            .hero { padding: 110px 0 30px; }
+            .weather-card { grid-template-columns: 1fr; text-align: center; }
+            .weather-details { justify-items: center; }
+            .event-slot { flex-wrap: wrap; }
+            .time-select { width: 100%; }
+            .footer-grid { grid-template-columns: 1fr; gap: 24px; }
+            .footer-bottom { flex-direction: column; gap: 8px; }
+            .outfit-items-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+        }
+
+        @media (max-width: 480px) {
+            .style-grid { grid-template-columns: repeat(3, 1fr); }
+            .gender-options { flex-wrap: wrap; }
+            .hero-features { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-effects">
+        <div class="bg-blob"></div>
+        <div class="bg-blob"></div>
+        <div class="bg-blob"></div>
+        <div class="bg-blob"></div>
+    </div>
+    <div class="grid-overlay"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="#" class="logo">
+            <div class="logo-icon">👗</div>
+            <span class="logo-text">StyleCast</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#app">Get Outfit</a></li>
+            <li><a href="#how">How It Works</a></li>
+            <li><a href="#reviews">Reviews</a></li>
+            <li><a href="#app" class="nav-cta">Try Free →</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <span class="dot"></span>
+                AI-Powered Fashion Assistant
+            </div>
+            <h1>
+                What Should I <span class="grad-1">Wear</span><br>
+                <span class="grad-2">Today?</span>
+            </h1>
+            <p>Enter your city & schedule — our AI suggests the perfect outfit based on real-time weather, your events, and personal style.</p>
+            <div class="hero-features">
+                <div class="hero-feature"><div class="icon">🌤️</div> Live Weather</div>
+                <div class="hero-feature"><div class="icon">📅</div> Calendar Sync</div>
+                <div class="hero-feature"><div class="icon">🤖</div> AI Powered</div>
+                <div class="hero-feature"><div class="icon">🎨</div> Color Match</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ad -->
+    <div class="container">
+        <div class="ad-banner">📢 Advertisement — <i>Google AdSense 728×90</i></div>
+    </div>
+
+    <!-- Main App -->
+    <section class="container" id="app">
+
+        <!-- Step 1: Location -->
+        <div class="app-section">
+            <div class="app-card">
+                <div class="app-card-header">
+                    <h2><span class="step-badge">1</span> Your Location</h2>
+                    <span style="font-size:12px;color:var(--text-muted)">For real-time weather</span>
+                </div>
+                <div class="app-card-body">
+                    <div class="location-input-group">
+                        <div class="input-wrapper">
+                            <span class="icon">📍</span>
+                            <input type="text" class="text-input" id="city-input" placeholder="Enter your city (e.g., New York, Mumbai, London)">
+                        </div>
+                        <button class="btn btn-gps" onclick="detectLocation()" title="Use my location">📡 GPS</button>
+                        <button class="btn btn-primary" onclick="fetchWeather()">Get Weather</button>
+                    </div>
+                    <div class="popular-cities">
+                        <span style="font-size:12px;color:var(--text-muted);padding:6px 0;">Popular:</span>
+                        <span class="city-chip" onclick="selectCity('New York')">New York</span>
+                        <span class="city-chip" onclick="selectCity('London')">London</span>
+                        <span class="city-chip" onclick="selectCity('Mumbai')">Mumbai</span>
+                        <span class="city-chip" onclick="selectCity('Tokyo')">Tokyo</span>
+                        <span class="city-chip" onclick="selectCity('Dubai')">Dubai</span>
+                        <span class="city-chip" onclick="selectCity('Paris')">Paris</span>
+                        <span class="city-chip" onclick="selectCity('Sydney')">Sydney</span>
+                    </div>
+
+                    <!-- Weather Display -->
+                    <div class="weather-display" id="weather-display">
+                        <div class="weather-card">
+                            <div class="weather-icon-large" id="weather-emoji">☀️</div>
+                            <div class="weather-info">
+                                <h3 id="weather-city">City Name</h3>
+                                <div class="weather-temp" id="weather-temp">28°C</div>
+                                <div class="weather-desc" id="weather-desc">Partly Cloudy</div>
+                            </div>
+                            <div class="weather-details">
+                                <div class="weather-detail-item">
+                                    <div class="label">Feels Like</div>
+                                    <div class="value" id="weather-feels">30°</div>
+                                </div>
+                                <div class="weather-detail-item">
+                                    <div class="label">Humidity</div>
+                                    <div class="value" id="weather-humidity">65%</div>
+                                </div>
+                                <div class="weather-detail-item">
+                                    <div class="label">Wind</div>
+                                    <div class="value" id="weather-wind">12 km/h</div>
+                                </div>
+                                <div class="weather-detail-item">
+                                    <div class="label">UV Index</div>
+                                    <div class="value" id="weather-uv">6</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Schedule -->
+        <div class="app-section">
+            <div class="app-card">
+                <div class="app-card-header">
+                    <h2><span class="step-badge">2</span> Today's Schedule</h2>
+                    <span style="font-size:12px;color:var(--text-muted)">Add your events</span>
+                </div>
+                <div class="app-card-body">
+                    <div class="event-slots" id="event-slots">
+                        <div class="event-slot" data-index="0">
+                            <select class="time-select">
+                                <option>Morning</option>
+                                <option selected>Afternoon</option>
+                                <option>Evening</option>
+                                <option>Night</option>
+                                <option>All Day</option>
+                            </select>
+                            <select class="event-select">
+                                <option value="">Select event...</option>
+                                <option value="office">💼 Office / Work</option>
+                                <option value="meeting">🤝 Business Meeting</option>
+                                <option value="interview">📋 Job Interview</option>
+                                <option value="date">❤️ Date Night</option>
+                                <option value="casual">😎 Casual Outing</option>
+                                <option value="gym">🏋️ Gym / Workout</option>
+                                <option value="brunch">🥂 Brunch / Cafe</option>
+                                <option value="shopping">🛍️ Shopping</option>
+                                <option value="party">🎉 Party</option>
+                                <option value="wedding">💒 Wedding / Ceremony</option>
+                                <option value="travel">✈️ Travel / Airport</option>
+                                <option value="college">🎓 College / University</option>
+                                <option value="outdoor">🏔️ Outdoor Activity</option>
+                                <option value="wfh">🏠 Work From Home</option>
+                                <option value="presentation">📊 Presentation</option>
+                                <option value="concert">🎵 Concert / Show</option>
+                            </select>
+                            <input type="text" class="event-note" placeholder="Optional note...">
+                            <button class="btn-remove-event" onclick="removeEvent(this)">✕</button>
+                        </div>
+                    </div>
+                    <button class="btn-add-event" onclick="addEvent()">+ Add Another Event</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Style Preferences -->
+        <div class="app-section">
+            <div class="app-card">
+                <div class="app-card-header">
+                    <h2><span class="step-badge">3</span> Your Style</h2>
+                    <span style="font-size:12px;color:var(--text-muted)">Select preferences</span>
+                </div>
+                <div class="app-card-body">
+                    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Gender Preference</p>
+                    <div class="gender-options" id="gender-options">
+                        <div class="gender-option selected" data-gender="male" onclick="selectGender(this)">👨 Male</div>
+                        <div class="gender-option" data-gender="female" onclick="selectGender(this)">👩 Female</div>
+                        <div class="gender-option" data-gender="unisex" onclick="selectGender(this)">🧑 Unisex</div>
+                    </div>
+                    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Style Preference (select one or more)</p>
+                    <div class="style-grid" id="style-grid">
+                        <div class="style-option selected" data-style="smart-casual" onclick="toggleStyle(this)">
+                            <span class="style-emoji">👔</span>
+                            <span class="style-name">Smart Casual</span>
+                        </div>
+                        <div class="style-option" data-style="formal" onclick="toggleStyle(this)">
+                            <span class="style-emoji">🤵</span>
+                            <span class="style-name">Formal</span>
+                        </div>
+                        <div class="style-option" data-style="streetwear" onclick="toggleStyle(this)">
+                            <span class="style-emoji">🧢</span>
+                            <span class="style-name">Streetwear</span>
+                        </div>
+                        <div class="style-option" data-style="minimalist" onclick="toggleStyle(this)">
+                            <span class="style-emoji">⬜</span>
+                            <span class="style-name">Minimalist</span>
+                        </div>
+                        <div class="style-option" data-style="bohemian" onclick="toggleStyle(this)">
+                            <span class="style-emoji">🌸</span>
+                            <span class="style-name">Bohemian</span>
+                        </div>
+                        <div class="style-option" data-style="athleisure" onclick="toggleStyle(this)">
+                            <span class="style-emoji">🏃</span>
+                            <span class="style-name">Athleisure</span>
+                        </div>
+                        <div class="style-option" data-style="vintage" onclick="toggleStyle(this)">
+                            <span class="style-emoji">📷</span>
+                            <span class="style-name">Vintage</span>
+                        </div>
+                        <div class="style-option" data-style="ethnic" onclick="toggleStyle(this)">
+                            <span class="style-emoji">🪷</span>
+                            <span class="style-name">Ethnic</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="generate-section">
+            <button class="btn-generate" id="btn-generate" onclick="generateOutfits()">
+                ✨ Generate My Outfit
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="outfit-loader">
+                <span class="loader-hanger">👗</span>
+            </div>
+            <div class="loading-text">Styling your perfect look...</div>
+            <div class="loading-sub">Our AI is analyzing weather & your schedule</div>
+            <ul class="loading-steps" id="loading-steps">
+                <li class="loading-step" data-s="1"><span class="check">1</span> Analyzing weather conditions...</li>
+                <li class="loading-step" data-s="2"><span class="check">2</span> Matching with your schedule...</li>
+                <li class="loading-step" data-s="3"><span class="check">3</span> Applying style preferences...</li>
+                <li class="loading-step" data-s="4"><span class="check">4</span> Selecting color palettes...</li>
+                <li class="loading-step" data-s="5"><span class="check">5</span> Generating outfit combinations...</li>
+            </ul>
+        </div>
+
+        <!-- Results -->
+        <div class="results-container" id="results-container">
+            <div class="results-header">
+                <h2>✨ Your Outfits for Today</h2>
+                <p id="results-subtitle">Curated by AI based on weather & your schedule</p>
+            </div>
+
+            <div class="weather-summary-bar" id="weather-summary-bar"></div>
+
+            <div class="outfit-timeline" id="outfit-timeline"></div>
+
+            <!-- Extra Advice -->
+            <div class="advice-grid" id="advice-grid"></div>
+
+            <div class="center-actions">
+                <button class="btn btn-primary" onclick="regenerateOutfits()">🔄 Regenerate Outfits</button>
+                <button class="btn btn-secondary" onclick="shareOutfits()">📤 Share</button>
+                <button class="btn btn-secondary" onclick="saveOutfits()">💾 Save Look</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ad -->
+    <div class="container">
+        <div class="ad-banner">📢 Advertisement — <i>Google AdSense 728×90</i></div>
+    </div>
+
+    <!-- How It Works -->
+    <section class="how-section container" id="how">
+        <div class="section-heading">
+            <h2>How StyleCast Works</h2>
+            <p>Three steps to your perfect outfit — every single day</p>
+        </div>
+        <div class="steps-row">
+            <div class="step-box">
+                <div class="step-num">1</div>
+                <h3>Enter Your City</h3>
+                <p>We fetch real-time weather — temperature, rain chances, humidity, and UV index for your location.</p>
+            </div>
+            <div class="step-box">
+                <div class="step-num">2</div>
+                <h3>Add Your Schedule</h3>
+                <p>Tell us your events — office meeting, dinner date, gym session, casual hangout, or anything else.</p>
+            </div>
+            <div class="step-box">
+                <div class="step-num">3</div>
+                <h3>Get AI Outfits</h3>
+                <p>Our AI suggests complete outfits with color palettes, layering tips, and accessories — tailored to you.</p>
+            </div>
+            <div class="step-box">
+                <div class="step-num">4</div>
+                <h3>Look Amazing!</h3>
+                <p>Save, share, or regenerate. Come back daily for fresh suggestions. Never overthink your wardrobe again.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials container" id="reviews">
+        <div class="section-heading">
+            <h2>Loved by Thousands</h2>
+            <p>See what our users are saying</p>
+        </div>
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                <p>"I used to spend 20 minutes every morning deciding what to wear. StyleCast does it in seconds and I always get compliments!"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">👩</div>
+                    <div>
+                        <div class="testimonial-name">Priya S.</div>
+                        <div class="testimonial-role">Marketing Manager</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                <p>"The weather integration is genius. It told me to carry an umbrella and wear layers — it rained AND got cold. Life saver!"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">👨</div>
+                    <div>
+                        <div class="testimonial-name">James K.</div>
+                        <div class="testimonial-role">Software Developer</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                <p>"Had a date + gym on the same day. StyleCast gave me separate outfits for each with the right vibe. Absolutely love it!"</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">👩</div>
+                    <div>
+                        <div class="testimonial-name">Aisha M.</div>
+                        <div class="testimonial-role">Fitness Instructor</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ad -->
+    <div class="container">
+        <div class="ad-banner">📢 Advertisement — <i>Google AdSense 728×90</i></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo">
+                    <div class="logo-icon">👗</div>
+                    <span class="logo-text">StyleCast</span>
+                </a>
+                <p>AI-powered outfit suggestions based on real-time weather and your daily schedule. Look perfect every day, effortlessly.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Features</h4>
+                <a href="#">Weather Outfits</a>
+                <a href="#">Calendar Sync</a>
+                <a href="#">Color Palettes</a>
+                <a href="#">Style Quiz</a>
+            </div>
+            <div class="footer-col">
+                <h4>Resources</h4>
+                <a href="#">Fashion Blog</a>
+                <a href="#">Style Guide</a>
+                <a href="#">Color Theory</a>
+                <a href="#">API Docs</a>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <a href="#">About Us</a>
+                <a href="#">Contact</a>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2025 StyleCast. All rights reserved.</span>
+            <span>Made with 💜 for fashion lovers</span>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span class="toast-icon" id="toast-icon">✅</span>
+        <span class="toast-msg" id="toast-msg">Done!</span>
+    </div>
+
+    <script>
+        // ===== STATE =====
+        let weatherData = null;
+        let selectedGender = 'male';
+        let selectedStyles = ['smart-casual'];
+        let eventCounter = 1;
+
+        // ===== CITY SELECTION =====
+        function selectCity(city) {
+            document.getElementById('city-input').value = city;
+            fetchWeather();
+        }
+
+        function detectLocation() {
+            if (navigator.geolocation) {
+                showToast('📡', 'Detecting your location...');
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const cities = ['New York','London','Mumbai','Tokyo','Dubai','Paris','Sydney','Berlin','Toronto','Singapore'];
+                    const city = cities[Math.floor(Math.random() * cities.length)];
+                    document.getElementById('city-input').value = city;
+                    fetchWeather();
+                }, () => {
+                    showToast('⚠️', 'Could not detect location. Please enter city manually.');
+                });
+            }
+        }
+
+        // ===== WEATHER ENGINE =====
+        function fetchWeather() {
+            const city = document.getElementById('city-input').value.trim();
+            if (!city) { showToast('⚠️', 'Please enter a city name'); return; }
+
+            // Simulated weather based on city
+            const weatherDB = {
+                'new york':    { temp: 8, feels: 5, humidity: 55, wind: 20, uv: 3, desc: 'Partly Cloudy', emoji: '⛅', rain: 20 },
+                'london':      { temp: 10, feels: 7, humidity: 78, wind: 25, uv: 2, desc: 'Overcast & Drizzle', emoji: '🌧️', rain: 70 },
+                'mumbai':      { temp: 33, feels: 38, humidity: 80, wind: 12, uv: 9, desc: 'Hot & Humid', emoji: '☀️', rain: 10 },
+                'tokyo':       { temp: 15, feels: 13, humidity: 60, wind: 15, uv: 4, desc: 'Clear Sky', emoji: '🌤️', rain: 5 },
+                'dubai':       { temp: 40, feels: 44, humidity: 35, wind: 18, uv: 11, desc: 'Extremely Hot', emoji: '🔥', rain: 0 },
+                'paris':       { temp: 12, feels: 9, humidity: 65, wind: 16, uv: 3, desc: 'Mild & Breezy', emoji: '🍃', rain: 30 },
+                'sydney':      { temp: 24, feels: 25, humidity: 58, wind: 14, uv: 7, desc: 'Sunny & Warm', emoji: '☀️', rain: 5 },
+                'berlin':      { temp: 5, feels: 1, humidity: 70, wind: 22, uv: 1, desc: 'Cold & Windy', emoji: '🌬️', rain: 40 },
+                'toronto':     { temp: -2, feels: -8, humidity: 65, wind: 28, uv: 1, desc: 'Snow Expected', emoji: '❄️', rain: 60 },
+                'singapore':   { temp: 31, feels: 36, humidity: 85, wind: 8, uv: 10, desc: 'Tropical & Humid', emoji: '🌴', rain: 50 },
+                'delhi':       { temp: 35, feels: 39, humidity: 45, wind: 10, uv: 10, desc: 'Hot & Sunny', emoji: '☀️', rain: 5 },
+                'bangalore':   { temp: 26, feels: 27, humidity: 65, wind: 12, uv: 6, desc: 'Pleasant', emoji: '🌤️', rain: 25 },
+                'seoul':       { temp: 3, feels: -2, humidity: 50, wind: 20, uv: 2, desc: 'Cold & Dry', emoji: '🥶', rain: 10 },
+                'los angeles': { temp: 22, feels: 23, humidity: 40, wind: 10, uv: 8, desc: 'Sunny & Clear', emoji: '😎', rain: 0 },
+                'chicago':     { temp: 2, feels: -4, humidity: 60, wind: 30, uv: 2, desc: 'Windy & Cold', emoji: '🌬️', rain: 35 },
+            };
+
+            const key = city.toLowerCase();
+            let w = weatherDB[key];
+
+            if (!w) {
+                // Random generation for unknown cities
+                const temp = Math.floor(Math.random() * 40) - 5;
+                const conditions = [
+                    { desc: 'Sunny', emoji: '☀️', rain: 0 },
+                    { desc: 'Partly Cloudy', emoji: '⛅', rain: 15 },
+                    { desc: 'Cloudy', emoji: '☁️', rain: 30 },
+                    { desc: 'Light Rain', emoji: '🌦️', rain: 60 },
+                    { desc: 'Heavy Rain', emoji: '🌧️', rain: 85 },
+                    { desc: 'Clear Sky', emoji: '🌤️', rain: 5 },
+                ];
+                const c = conditions[Math.floor(Math.random() * conditions.length)];
+                w = {
+                    temp, feels: temp + (Math.random() > 0.5 ? 3 : -2),
+                    humidity: 30 + Math.floor(Math.random() * 50),
+                    wind: 5 + Math.floor(Math.random() * 25),
+                    uv: Math.floor(Math.random() * 11),
+                    desc: c.desc, emoji: c.emoji, rain: c.rain
+                };
+            }
+
+            weatherData = { ...w, city: city.charAt(0).toUpperCase() + city.slice(1) };
+
+            // Update UI
+            document.getElementById('weather-emoji').textContent = w.emoji;
+            document.getElementById('weather-city').textContent = weatherData.city;
+            document.getElementById('weather-temp').textContent = w.temp + '°C';
+            document.getElementById('weather-desc').textContent = w.desc;
+            document.getElementById('weather-feels').textContent = w.feels + '°';
+            document.getElementById('weather-humidity').textContent = w.humidity + '%';
+            document.getElementById('weather-wind').textContent = w.wind + ' km/h';
+            document.getElementById('weather-uv').textContent = w.uv;
+            document.getElementById('weather-display').classList.add('active');
+
+            showToast('🌤️', `Weather loaded for ${weatherData.city}!`);
+        }
+
+        // ===== EVENTS =====
+        function addEvent() {
+            eventCounter++;
+            const slot = document.createElement('div');
+            slot.className = 'event-slot';
+            slot.dataset.index = eventCounter;
+            slot.innerHTML = `
+                <select class="time-select">
+                    <option>Morning</option><option>Afternoon</option><option selected>Evening</option><option>Night</option><option>All Day</option>
+                </select>
+                <select class="event-select">
+                    <option value="">Select event...</option>
+                    <option value="office">💼 Office / Work</option>
+                    <option value="meeting">🤝 Business Meeting</option>
+                    <option value="interview">📋 Job Interview</option>
+                    <option value="date">❤️ Date Night</option>
+                    <option value="casual">😎 Casual Outing</option>
+                    <option value="gym">🏋️ Gym / Workout</option>
+                    <option value="brunch">🥂 Brunch / Cafe</option>
+                    <option value="shopping">🛍️ Shopping</option>
+                    <option value="party">🎉 Party</option>
+                    <option value="wedding">💒 Wedding / Ceremony</option>
+                    <option value="travel">✈️ Travel / Airport</option>
+                    <option value="college">🎓 College / University</option>
+                    <option value="outdoor">🏔️ Outdoor Activity</option>
+                    <option value="wfh">🏠 Work From Home</option>
+                    <option value="presentation">📊 Presentation</option>
+                    <option value="concert">🎵 Concert / Show</option>
+                </select>
+                <input type="text" class="event-note" placeholder="Optional note...">
+                <button class="btn-remove-event" onclick="removeEvent(this)">✕</button>
+            `;
+            document.getElementById('event-slots').appendChild(slot);
+        }
+
+        function removeEvent(btn) {
+            const slots = document.querySelectorAll('.event-slot');
+            if (slots.length > 1) btn.closest('.event-slot').remove();
+            else showToast('⚠️', 'You need at least one event');
+        }
+
+        // ===== STYLE SELECTION =====
+        function selectGender(el) {
+            document.querySelectorAll('.gender-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedGender = el.dataset.gender;
+        }
+
+        function toggleStyle(el) {
+            el.classList.toggle('selected');
+            selectedStyles = [...document.querySelectorAll('.style-option.selected')].map(o => o.dataset.style);
+            if (selectedStyles.length === 0) {
+                el.classList.add('selected');
+                selectedStyles = [el.dataset.style];
+            }
+        }
+
+        // ===== OUTFIT DATABASE =====
+        const outfitDB = {
+            // Male outfits
+            male: {
+                office: {
+                    hot: { items: [
+                        { emoji: '👔', name: 'Linen Shirt', detail: 'Light Blue / White' },
+                        { emoji: '👖', name: 'Chinos', detail: 'Beige / Navy' },
+                        { emoji: '🥿', name: 'Loafers', detail: 'Brown Leather' },
+                        { emoji: '⌚', name: 'Watch', detail: 'Minimal' },
+                        { emoji: '🕶️', name: 'Sunglasses', detail: 'UV Protection' },
+                    ], colors: ['#E8D5B7','#4A90D9','#FFFFFF','#8B6914','#2C3E50'], tip: 'Choose breathable fabrics like linen or cotton. Roll up sleeves for a smart casual look. Stay hydrated!' },
+                    cold: { items: [
+                        { emoji: '🧥', name: 'Blazer', detail: 'Charcoal / Navy' },
+                        { emoji: '👔', name: 'Oxford Shirt', detail: 'White / Light Blue' },
+                        { emoji: '👖', name: 'Wool Trousers', detail: 'Dark Grey' },
+                        { emoji: '👞', name: 'Oxford Shoes', detail: 'Black / Brown' },
+                        { emoji: '🧣', name: 'Scarf', detail: 'Cashmere Blend' },
+                    ], colors: ['#2C3E50','#34495E','#FFFFFF','#8B4513','#C0392B'], tip: 'Layer up with a quality blazer. Merino wool sweater underneath adds warmth without bulk. Dark colors absorb heat.' },
+                    rainy: { items: [
+                        { emoji: '🧥', name: 'Trench Coat', detail: 'Water-Resistant' },
+                        { emoji: '👔', name: 'Button-Down', detail: 'Wrinkle-Free' },
+                        { emoji: '👖', name: 'Dark Jeans', detail: 'Won\'t show splashes' },
+                        { emoji: '🥾', name: 'Chelsea Boots', detail: 'Waterproof' },
+                        { emoji: '☂️', name: 'Umbrella', detail: 'Compact' },
+                    ], colors: ['#2C3E50','#1A1A2E','#34495E','#8B4513','#16213E'], tip: 'Avoid suede in rain. Chelsea boots are stylish AND waterproof. Dark pants hide water splashes.' }
+                },
+                meeting: {
+                    hot: { items: [
+                        { emoji: '👔', name: 'Tailored Shirt', detail: 'White / Pastel' },
+                        { emoji: '👖', name: 'Slim Trousers', detail: 'Navy' },
+                        { emoji: '👞', name: 'Derby Shoes', detail: 'Tan' },
+                        { emoji: '💼', name: 'Briefcase', detail: 'Leather' },
+                        { emoji: '🪢', name: 'Tie (Optional)', detail: 'Silk' },
+                    ], colors: ['#FFFFFF','#1B2A4A','#C19A6B','#2C3E50','#8E44AD'], tip: 'First impressions matter. A crisp white shirt with navy trousers is timeless and professional.' },
+                    cold: { items: [
+                        { emoji: '🤵', name: 'Suit', detail: 'Charcoal / Navy' },
+                        { emoji: '👔', name: 'Dress Shirt', detail: 'White' },
+                        { emoji: '🪢', name: 'Tie', detail: 'Silk, subtle pattern' },
+                        { emoji: '👞', name: 'Oxford Shoes', detail: 'Black polished' },
+                        { emoji: '🧥', name: 'Overcoat', detail: 'Wool' },
+                    ], colors: ['#1C1C1C','#FFFFFF','#8B0000','#2C3E50','#C0C0C0'], tip: 'Full suit for cold-weather meetings. An overcoat adds executive gravitas. Polish those shoes!' },
+                    rainy: { items: [
+                        { emoji: '🧥', name: 'Navy Blazer', detail: 'Water-Resistant' },
+                        { emoji: '👔', name: 'Dress Shirt', detail: 'White' },
+                        { emoji: '👖', name: 'Dark Trousers', detail: 'Crease-resistant' },
+                        { emoji: '🥾', name: 'Smart Boots', detail: 'Weatherproof' },
+                        { emoji: '☂️', name: 'Umbrella', detail: 'Professional' },
+                    ], colors: ['#1B2A4A','#FFFFFF','#2C3E50','#3D3D3D','#8B4513'], tip: 'Bring a professional umbrella. Keep spare shoes at office if commute is wet.' }
+                },
+                date: {
+                    hot: { items: [
+                        { emoji: '👕', name: 'Fitted Polo', detail: 'Navy / Black' },
+                        { emoji: '👖', name: 'Slim Chinos', detail: 'Tan / Olive' },
+                        { emoji: '👟', name: 'White Sneakers', detail: 'Clean & Minimal' },
+                        { emoji: '⌚', name: 'Watch', detail: 'Dressy Casual' },
+                        { emoji: '🧴', name: 'Cologne', detail: 'Fresh & Light' },
+                    ], colors: ['#1B2A4A','#C19A6B','#FFFFFF','#556B2F','#D4AF37'], tip: 'Confidence is your best accessory! A fitted polo shows effort without trying too hard. Light cologne — less is more.' },
+                    cold: { items: [
+                        { emoji: '🧥', name: 'Leather Jacket', detail: 'Black / Brown' },
+                        { emoji: '👕', name: 'Henley Shirt', detail: 'Burgundy / Black' },
+                        { emoji: '👖', name: 'Dark Jeans', detail: 'Slim Fit' },
+                        { emoji: '🥾', name: 'Boots', detail: 'Chelsea Style' },
+                        { emoji: '🧴', name: 'Cologne', detail: 'Warm & Woody' },
+                    ], colors: ['#1C1C1C','#722F37','#2C2C2C','#8B4513','#D4AF37'], tip: 'Leather jacket = instant date style. Dark colors are slimming and mysterious. Boots add height.' },
+                    rainy: { items: [
+                        { emoji: '🧥', name: 'Bomber Jacket', detail: 'Water-Resistant' },
+                        { emoji: '👕', name: 'Crew Neck Tee', detail: 'Black / White' },
+                        { emoji: '👖', name: 'Dark Jeans', detail: 'Tapered' },
+                        { emoji: '👟', name: 'Waterproof Sneakers', detail: 'Black' },
+                        { emoji: '☂️', name: 'Share Umbrella', detail: '😉 Romance move' },
+                    ], colors: ['#1C1C1C','#FFFFFF','#2C2C2C','#4A4A4A','#FF6B6B'], tip: 'Sharing an umbrella on a date? *Chef\'s kiss* 🤌 Keep it casual but put together.' }
+                },
+                casual: {
+                    hot: { items: [
+                        { emoji: '👕', name: 'Graphic Tee', detail: 'Cotton, Breathable' },
+                        { emoji: '🩳', name: 'Shorts', detail: 'Chino / Denim' },
+                        { emoji: '🩴', name: 'Slides / Sneakers', detail: 'Comfortable' },
+                        { emoji: '🧢', name: 'Cap', detail: 'Sun Protection' },
+                        { emoji: '🕶️', name: 'Sunglasses', detail: 'Aviator / Wayfarer' },
+                    ], colors: ['#FFFFFF','#87CEEB','#C19A6B','#2C3E50','#FF6347'], tip: 'Stay cool and comfortable. Light colors reflect heat. Don\'t forget sunscreen!' },
+                    cold: { items: [
+                        { emoji: '🧥', name: 'Hoodie', detail: 'Fleece-Lined' },
+                        { emoji: '👕', name: 'Long Sleeve Tee', detail: 'Layering Piece' },
+                        { emoji: '👖', name: 'Jeans', detail: 'Regular Fit' },
+                        { emoji: '👟', name: 'Sneakers', detail: 'High-Tops' },
+                        { emoji: '🧣', name: 'Beanie', detail: 'Knit' },
+                    ], colors: ['#3D3D3D','#696969','#1C1C1C','#FFFFFF','#8B0000'], tip: 'Layer a hoodie over a long-sleeve for warmth control. High-top sneakers add style in cold weather.' },
+                    rainy: { items: [
+                        { emoji: '🧥', name: 'Windbreaker', detail: 'Waterproof' },
+                        { emoji: '👕', name: 'T-Shirt', detail: 'Quick-Dry' },
+                        { emoji: '👖', name: 'Joggers', detail: 'Water-Resistant' },
+                        { emoji: '👟', name: 'Rain Sneakers', detail: 'Waterproof' },
+                        { emoji: '☂️', name: 'Umbrella', detail: 'Compact' },
+                    ], colors: ['#2C3E50','#3498DB','#1C1C1C','#95A5A6','#E74C3C'], tip: 'A good windbreaker is your rainy day best friend. Quick-dry fabrics prevent that damp feeling.' }
+                },
+                gym: {
+                    hot: { items: [
+                        { emoji: '🏋️', name: 'Tank Top', detail: 'Moisture-Wicking' },
+                        { emoji: '🩳', name: 'Athletic Shorts', detail: '7-inch' },
+                        { emoji: '👟', name: 'Training Shoes', detail: 'Breathable' },
+                        { emoji: '💧', name: 'Water Bottle', detail: 'Insulated' },
+                        { emoji: '🎧', name: 'Earbuds', detail: 'Sweat-Proof' },
+                    ], colors: ['#1C1C1C','#FF4757','#FFFFFF','#2ED573','#3498DB'], tip: 'Moisture-wicking fabrics are essential in hot weather workouts. Pre-hydrate 30 mins before gym.' },
+                    cold: { items: [
+                        { emoji: '👕', name: 'Long Sleeve', detail: 'Compression Top' },
+                        { emoji: '👖', name: 'Track Pants', detail: 'Fleece-Lined' },
+                        { emoji: '👟', name: 'Training Shoes', detail: 'Supportive' },
+                        { emoji: '🧤', name: 'Gym Gloves', detail: 'Grip Enhanced' },
+                        { emoji: '🎧', name: 'Headphones', detail: 'Over-Ear' },
+                    ], colors: ['#1C1C1C','#2C3E50','#E74C3C','#FFFFFF','#3498DB'], tip: 'Warm up extra in cold weather. Compression wear helps maintain body heat during workouts.' },
+                    rainy: { items: [
+                        { emoji: '🏋️', name: 'Dry-Fit Tee', detail: 'Quick-Dry' },
+                        { emoji: '👖', name: 'Training Pants', detail: 'Flexible' },
+                        { emoji: '👟', name: 'Indoor Trainers', detail: 'Non-Slip' },
+                        { emoji: '🎒', name: 'Gym Bag', detail: 'Waterproof' },
+                        { emoji: '🧥', name: 'Rain Jacket', detail: 'For commute' },
+                    ], colors: ['#2C3E50','#1C1C1C','#3498DB','#E74C3C','#95A5A6'], tip: 'Pack your gym clothes in a waterproof bag. Change into dry clothes after workout to avoid catching cold.' }
+                }
+            },
+            // Female outfits
+            female: {
+                office: {
+                    hot: { items: [
+                        { emoji: '👚', name: 'Silk Blouse', detail: 'Pastel / White' },
+                        { emoji: '👖', name: 'Tailored Trousers', detail: 'Wide Leg' },
+                        { emoji: '👡', name: 'Block Heels', detail: 'Nude / Tan' },
+                        { emoji: '👜', name: 'Tote Bag', detail: 'Structured' },
+                        { emoji: '💍', name: 'Jewelry', detail: 'Minimal Gold' },
+                    ], colors: ['#FAD2E1','#FFFFFF','#C19A6B','#2C3E50','#D4AF37'], tip: 'Silk blouses breathe well in heat while looking polished. Wide-leg trousers allow air circulation. Block heels are comfy for all-day wear.' },
+                    cold: { items: [
+                        { emoji: '🧥', name: 'Structured Blazer', detail: 'Black / Camel' },
+                        { emoji: '👚', name: 'Turtleneck', detail: 'Cashmere / Merino' },
+                        { emoji: '👖', name: 'Tailored Pants', detail: 'Slim Fit' },
+                        { emoji: '👢', name: 'Ankle Boots', detail: 'Leather' },
+                        { emoji: '👜', name: 'Leather Bag', detail: 'Structured' },
+                    ], colors: ['#1C1C1C','#C19A6B','#2C3E50','#8B4513','#D4AF37'], tip: 'A camel blazer + black turtleneck is an iconic power combo. Ankle boots keep feet warm and stylish.' },
+                    rainy: { items: [
+                        { emoji: '🧥', name: 'Trench Coat', detail: 'Classic Beige' },
+                        { emoji: '👚', name: 'Knit Top', detail: 'Comfortable' },
+                        { emoji: '👖', name: 'Dark Pants', detail: 'Splash-Proof' },
+                        { emoji: '🥾', name: 'Rain Boots', detail: 'Stylish' },
+                        { emoji: '☂️', name: 'Umbrella', detail: 'Printed' },
+                    ], colors: ['#C19A6B','#2C3E50','#1C1C1C','#8B0000','#FFFFFF'], tip: 'A classic trench coat is THE rainy day power piece. Pair with stylish rain boots — functional and chic.' }
+                },
+                date: {
+                    hot: { items: [
+                        { emoji: '👗', name: 'Summer Dress', detail: 'Floral / Solid' },
+                        { emoji: '👡', name: 'Strappy Sandals', detail: 'Gold / Nude' },
+                        { emoji: '👜', name: 'Clutch', detail: 'Elegant' },
+                        { emoji: '💍', name: 'Statement Earrings', detail: 'Gold' },
+                        { emoji: '🧴', name: 'Perfume', detail: 'Floral & Fresh' },
+                    ], colors: ['#FF7EB3','#FFFFFF','#D4AF37','#FFB6C1','#F5DEB3'], tip: 'A well-fitted dress is effortlessly stunning. Let your confidence shine — that\'s the best accessory!' },
+                    cold: { items: [
+                        { emoji: '👗', name: 'Knit Dress', detail: 'Body-Con / Midi' },
+                        { emoji: '🧥', name: 'Faux Fur Coat', detail: 'Statement' },
+                        { emoji: '👢', name: 'Knee-High Boots', detail: 'Leather / Suede' },
+                        { emoji: '👜', name: 'Evening Bag', detail: 'Chain Strap' },
+                        { emoji: '🧴', name: 'Perfume', detail: 'Warm & Musky' },
+                    ], colors: ['#722F37','#1C1C1C','#D4AF37','#8B4513','#FAD2E1'], tip: 'Knee-high boots + midi dress = winter date perfection. A statement coat makes the entrance memorable.' },
+                    rainy: { items: [
+                        { emoji: '👚', name: 'Chic Blouse', detail: 'Satin' },
+                        { emoji: '👖', name: 'Leather Pants', detail: 'Faux Leather' },
+                        { emoji: '🧥', name: 'Moto Jacket', detail: 'Edgy' },
+                        { emoji: '👢', name: 'Ankle Boots', detail: 'Waterproof' },
+                        { emoji: '☂️', name: 'Cute Umbrella', detail: 'Statement piece' },
+                    ], colors: ['#1C1C1C','#722F37','#2C3E50','#D4AF37','#FF6B6B'], tip: 'Faux leather pants look amazing AND repel rain. An edgy moto jacket adds that effortless cool-girl vibe.' }
+                },
+                casual: {
+                    hot: { items: [
+                        { emoji: '👕', name: 'Crop Top', detail: 'Cotton / Linen' },
+                        { emoji: '🩳', name: 'High-Waist Shorts', detail: 'Denim' },
+                        { emoji: '👡', name: 'Platform Sandals', detail: 'Trendy' },
+                        { emoji: '🕶️', name: 'Cat-Eye Sunglasses', detail: 'UV Protection' },
+                        { emoji: '👜', name: 'Straw Bag', detail: 'Summer Vibes' },
+                    ], colors: ['#FFFFFF','#87CEEB','#FFB6C1','#F5DEB3','#FF6347'], tip: 'High-waist shorts + crop top is the ultimate summer combo. Don\'t forget SPF 50!' },
+                    cold: { items: [
+                        { emoji: '🧥', name: 'Oversized Sweater', detail: 'Cozy Knit' },
+                        { emoji: '👖', name: 'Mom Jeans', detail: 'Vintage Wash' },
+                        { emoji: '👟', name: 'White Sneakers', detail: 'Platform' },
+                        { emoji: '🧣', name: 'Chunky Scarf', detail: 'Wool Blend' },
+                        { emoji: '🧢', name: 'Beanie', detail: 'Matching' },
+                    ], colors: ['#F5DEB3','#87CEEB','#FFFFFF','#8B4513','#C0392B'], tip: 'Oversized sweaters are cozy AND trendy. Tuck the front into jeans for a casual-chic silhouette.' },
+                    rainy: { items: [
+                        { emoji: '🧥', name: 'Puffer Jacket', detail: 'Waterproof' },
+                        { emoji: '👕', name: 'Basic Tee', detail: 'Layering' },
+                        { emoji: '👖', name: 'Leggings', detail: 'Quick-Dry' },
+                        { emoji: '🥾', name: 'Rain Boots', detail: 'Cute Print' },
+                        { emoji: '☂️', name: 'Clear Umbrella', detail: 'Trendy' },
+                    ], colors: ['#FFB6C1','#1C1C1C','#FFFFFF','#FF6347','#3498DB'], tip: 'Clear umbrellas are SO aesthetic in the rain. Cute rain boots turn a gloomy day into a fashion moment!' }
+                },
+                gym: {
+                    hot: { items: [
+                        { emoji: '🏋️', name: 'Sports Bra', detail: 'High Support' },
+                        { emoji: '👖', name: 'Biker Shorts', detail: 'Moisture-Wicking' },
+                        { emoji: '👟', name: 'Training Shoes', detail: 'Breathable Mesh' },
+                        { emoji: '💧', name: 'Water Bottle', detail: 'Insulated' },
+                        { emoji: '🎧', name: 'Earbuds', detail: 'Sweat-Proof' },
+                    ], colors: ['#1C1C1C','#FF6B6B','#FFFFFF','#2ED573','#9B59B6'], tip: 'Biker shorts + matching sports bra = gym aesthetic queen. Stay hydrated in hot weather!' },
+                    cold: { items: [
+                        { emoji: '👕', name: 'Long Sleeve Crop', detail: 'Compression' },
+                        { emoji: '👖', name: 'High-Waist Leggings', detail: 'Fleece-Lined' },
+                        { emoji: '👟', name: 'Training Shoes', detail: 'Supportive' },
+                        { emoji: '🧥', name: 'Zip-Up Hoodie', detail: 'Warm-Up Layer' },
+                        { emoji: '🎧', name: 'Headband', detail: 'Ear Warmth' },
+                    ], colors: ['#1C1C1C','#9B59B6','#E74C3C','#FFFFFF','#2C3E50'], tip: 'Fleece-lined leggings are a cold-weather gym game-changer. Layer up for warm-up, strip down as you heat up.' },
+                    rainy: { items: [
+                        { emoji: '🏋️', name: 'Tank Top', detail: 'Quick-Dry' },
+                        { emoji: '👖', name: 'Leggings', detail: 'Full Length' },
+                        { emoji: '👟', name: 'Indoor Trainers', detail: 'Non-Slip' },
+                        { emoji: '🎒', name: 'Gym Bag', detail: 'Waterproof' },
+                        { emoji: '🧥', name: 'Rain Jacket', detail: 'Packable' },
+                    ], colors: ['#3498DB','#1C1C1C','#FF6B6B','#FFFFFF','#2C3E50'], tip: 'Pack gym clothes separately in a waterproof compartment. Nobody likes pulling out wet gym clothes!' }
+                },
+                meeting: null, wedding: null, party: null
+            }
+        };
+
+        // Copy missing event types
+        ['meeting','interview','presentation'].forEach(e => {
+            if (!outfitDB.male[e]) outfitDB.male[e] = outfitDB.male.meeting || outfitDB.male.office;
+            if (!outfitDB.female[e]) outfitDB.female[e] = outfitDB.female.office;
+        });
+        ['party','concert','brunch','shopping'].forEach(e => {
+            if (!outfitDB.male[e]) outfitDB.male[e] = outfitDB.male.casual;
+            if (!outfitDB.female[e]) outfitDB.female[e] = outfitDB.female.casual;
+        });
+        ['wedding'].forEach(e => {
+            if (!outfitDB.male[e]) outfitDB.male[e] = outfitDB.male.meeting || outfitDB.male.office;
+            if (!outfitDB.female[e]) outfitDB.female[e] = outfitDB.female.date;
+        });
+        ['travel','outdoor','college','wfh'].forEach(e => {
+            if (!outfitDB.male[e]) outfitDB.male[e] = outfitDB.male.casual;
+            if (!outfitDB.female[e]) outfitDB.female[e] = outfitDB.female.casual;
+        });
+
+        // ===== GENERATE OUTFITS =====
+        function generateOutfits() {
+            if (!weatherData) { showToast('⚠️', 'Please get weather first!'); return; }
+
+            const events = [];
+            document.querySelectorAll('.event-slot').forEach(slot => {
+                const time = slot.querySelector('.time-select').value;
+                const event = slot.querySelector('.event-select').value;
+                const note = slot.querySelector('.event-note').value;
+                if (event) events.push({ time, event, note });
+            });
+
+            if (events.length === 0) { showToast('⚠️', 'Please add at least one event!'); return; }
+
+            // Show loading
+            document.getElementById('btn-generate').style.display = 'none';
+            document.getElementById('results-container').classList.remove('active');
+            const loader = document.getElementById('loading-overlay');
+            loader.classList.add('active');
+
+            const steps = document.querySelectorAll('.loading-step');
+            steps.forEach(s => { s.classList.remove('done', 'active'); });
+
+            let step = 0;
+            const stepTimer = setInterval(() => {
+                if (step > 0) {
+                    steps[step - 1].classList.remove('active');
+                    steps[step - 1].classList.add('done');
+                    steps[step - 1].querySelector('.check').textContent = '✓';
+                }
+                if (step < steps.length) {
+                    steps[step].classList.add('active');
+                    step++;
+                } else {
+                    clearInterval(stepTimer);
+                    setTimeout(() => {
+                        loader.classList.remove('active');
+                        displayResults(events);
+                    }, 500);
+                }
+            }, 700);
+        }
+
+        function getWeatherCategory() {
+            if (weatherData.rain >= 50) return 'rainy';
+            if (weatherData.temp <= 12) return 'cold';
+            return 'hot';
+        }
+
+        function getEventEmoji(event) {
+            const map = { office:'💼', meeting:'🤝', interview:'📋', date:'❤️', casual:'😎', gym:'🏋️', brunch:'🥂', shopping:'🛍️', party:'🎉', wedding:'💒', travel:'✈️', college:'🎓', outdoor:'🏔️', wfh:'🏠', presentation:'📊', concert:'🎵' };
+            return map[event] || '📅';
+        }
+
+        function getEventName(event) {
+            const map = { office:'Office / Work', meeting:'Business Meeting', interview:'Job Interview', date:'Date', casual:'Casual Outing', gym:'Gym / Workout', brunch:'Brunch / Cafe', shopping:'Shopping', party:'Party', wedding:'Wedding / Ceremony', travel:'Travel / Airport', college:'College', outdoor:'Outdoor Activity', wfh:'Work From Home', presentation:'Presentation', concert:'Concert / Show' };
+            return map[event] || event;
+        }
+
+        function displayResults(events) {
+            const results = document.getElementById('results-container');
+            results.classList.add('active');
+
+            const gender = selectedGender === 'unisex' ? (Math.random() > 0.5 ? 'male' : 'female') : selectedGender;
+            const weatherCat = getWeatherCategory();
+
+            // Weather summary bar
+            const wsBar = document.getElementById('weather-summary-bar');
+            wsBar.innerHTML = `
+                <div class="ws-item"><span class="ws-icon">${weatherData.emoji}</span><div><div class="ws-label">Weather</div><div class="ws-value">${weatherData.desc}</div></div></div>
+                <div class="ws-item"><span class="ws-icon">🌡️</span><div><div class="ws-label">Temperature</div><div class="ws-value">${weatherData.temp}°C</div></div></div>
+                <div class="ws-item"><span class="ws-icon">💧</span><div><div class="ws-label">Rain Chance</div><div class="ws-value">${weatherData.rain}%</div></div></div>
+                <div class="ws-item"><span class="ws-icon">📍</span><div><div class="ws-label">Location</div><div class="ws-value">${weatherData.city}</div></div></div>
+            `;
+
+            document.getElementById('results-subtitle').textContent = `Personalized for ${weatherData.city} • ${weatherData.temp}°C ${weatherData.desc} • ${selectedGender.charAt(0).toUpperCase() + selectedGender.slice(1)}`;
+
+            // Build outfit blocks
+            const timeline = document.getElementById('outfit-timeline');
+            timeline.innerHTML = '';
+
+            events.forEach((ev, idx) => {
+                const genderDB = outfitDB[gender] || outfitDB.male;
+                let eventDB = genderDB[ev.event] || genderDB.casual;
+                let outfitData = eventDB[weatherCat] || eventDB.hot;
+
+                const block = document.createElement('div');
+                block.className = 'outfit-block';
+                block.innerHTML = `
+                    <div class="outfit-block-header">
+                        <div class="outfit-time-event">
+                            <span class="outfit-time">${ev.time}</span>
+                            <span class="outfit-event-emoji">${getEventEmoji(ev.event)}</span>
+                            <span class="outfit-event-name">${getEventName(ev.event)}${ev.note ? ' — ' + ev.note : ''}</span>
+                        </div>
+                    </div>
+                    <div class="outfit-body">
+                        <div class="outfit-items-grid">
+                            ${outfitData.items.map(item => `
+                                <div class="outfit-item">
+                                    <span class="outfit-item-emoji">${item.emoji}</span>
+                                    <div class="outfit-item-name">${item.name}</div>
+                                    <div class="outfit-item-detail">${item.detail}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="color-palette-section">
+                            <div class="color-palette-label">Suggested Color Palette</div>
+                            <div class="color-swatches">
+                                ${outfitData.colors.map(c => `
+                                    <div class="color-swatch" style="background:${c}" onclick="navigator.clipboard.writeText('${c}');showToast('🎨','Color ${c} copied!')">
+                                        <span class="tooltip">${c}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="outfit-tips">
+                            <h4>💡 Pro Tip</h4>
+                            <p>${outfitData.tip}</p>
+                        </div>
+                    </div>
+                    <div class="outfit-block-footer">
+                        <button class="btn-sm" onclick="saveOneOutfit(${idx})">💾 Save</button>
+                        <button class="btn-sm" onclick="shareOneOutfit(${idx})">📤 Share</button>
+                        <button class="btn-sm" onclick="showToast('🛒','Shopping links coming soon!')">🛒 Shop This Look</button>
+                    </div>
+                `;
+                timeline.appendChild(block);
+            });
+
+            // Advice grid
+            const adviceGrid = document.getElementById('advice-grid');
+            adviceGrid.innerHTML = '';
+
+            const advices = [];
+            if (weatherData.rain >= 40) advices.push({ icon: '☂️', title: 'Rain Alert!', text: `${weatherData.rain}% chance of rain today. Carry an umbrella and avoid suede/canvas shoes.` });
+            if (weatherData.uv >= 6) advices.push({ icon: '☀️', title: 'High UV Index', text: `UV index is ${weatherData.uv}. Apply SPF 30+ sunscreen. Wear sunglasses and a hat if outdoors.` });
+            if (weatherData.temp <= 5) advices.push({ icon: '🧣', title: 'Bundle Up!', text: `It's ${weatherData.temp}°C — layer up! Thermal innerwear + mid-layer + outer jacket recommended.` });
+            if (weatherData.temp >= 35) advices.push({ icon: '💧', title: 'Stay Hydrated', text: `At ${weatherData.temp}°C, drink water frequently. Wear light colors and breathable fabrics.` });
+            if (weatherData.wind >= 20) advices.push({ icon: '🌬️', title: 'Windy Day', text: `Wind at ${weatherData.wind} km/h. Avoid loose scarves and wide-brim hats. Secure hairstyles.` });
+            if (weatherData.humidity >= 70) advices.push({ icon: '💦', title: 'High Humidity', text: `${weatherData.humidity}% humidity. Anti-frizz products for hair. Moisture-wicking fabrics are your friend.` });
+            if (advices.length === 0) advices.push({ icon: '✨', title: 'Perfect Weather!', text: 'Great weather today! You have full flexibility with your outfit choices. Enjoy your day!' });
+
+            advices.push({ icon: '👟', title: 'Shoe Tip', text: weatherData.rain >= 40 ? 'Opt for waterproof footwear today. Avoid suede, canvas, and open-toed shoes.' : weatherData.temp >= 30 ? 'Breathable sneakers or sandals work great. Avoid heavy boots in this heat.' : 'Boots or closed-toe shoes recommended. Keep feet warm and dry.' });
+
+            advices.forEach(a => {
+                const card = document.createElement('div');
+                card.className = 'advice-card';
+                card.innerHTML = `<div class="advice-icon">${a.icon}</div><h4>${a.title}</h4><p>${a.text}</p>`;
+                adviceGrid.appendChild(card);
+            });
+
+            document.getElementById('btn-generate').style.display = 'inline-flex';
+            results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function regenerateOutfits() {
+            document.getElementById('results-container').classList.remove('active');
+            setTimeout(() => generateOutfits(), 300);
+        }
+
+        function shareOutfits() {
+            const text = `👗 StyleCast suggested my outfit for today!\n📍 ${weatherData.city} | ${weatherData.temp}°C ${weatherData.desc}\nTry it free at StyleCast!`;
+            if (navigator.share) {
+                navigator.share({ title: 'My StyleCast Outfit', text });
+            } else {
+                navigator.clipboard.writeText(text).then(() => showToast('📋', 'Copied to clipboard!'));
+            }
+        }
+
+        function saveOutfits() {
+            showToast('💾', 'Outfit saved to your collection!');
+        }
+
+        function saveOneOutfit(idx) {
+            showToast('💾', `Outfit ${idx + 1} saved!`);
+        }
+
+        function shareOneOutfit(idx) {
+            const text = `Check out this outfit suggestion from StyleCast! 👗✨`;
+            if (navigator.share) navigator.share({ title: 'StyleCast Outfit', text });
+            else { navigator.clipboard.writeText(text); showToast('📋', 'Copied!'); }
+        }
+
+        // ===== TOAST =====
+        function showToast(icon, msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-icon').textContent = icon;
+            document.getElementById('toast-msg').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // ===== SMOOTH SCROLL =====
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                const t = document.querySelector(a.getAttribute('href'));
+                if (t) t.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // ===== ENTER KEY =====
+        document.getElementById('city-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') fetchWeather();
+        });
+    </script>
+</body>
+</html>
